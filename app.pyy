@@ -1,0 +1,146 @@
+import streamlit as st
+import matplotlib.pyplot as plt
+
+# Porsche 911 Braking Physics Simulation
+# Prepared by: Talia Fouda
+# Grade 12 Physics — Car Braking
+# Educational model only; values are illustrative assumptions.
+
+G = 9.81
+REACTION_TIME = 1.5
+
+def stopping_distances(speed_kmh, friction, reaction_time=REACTION_TIME):
+    """Calculate reaction, braking, and total stopping distances in metres."""
+    if speed_kmh < 0:
+        raise ValueError("Speed cannot be negative.")
+    if friction <= 0:
+        raise ValueError("Friction must be greater than zero.")
+    if reaction_time < 0:
+        raise ValueError("Reaction time cannot be negative.")
+
+    speed_ms = speed_kmh / 3.6
+    reaction_distance = speed_ms * reaction_time
+    deceleration = friction * G
+    braking_distance = speed_ms**2 / (2 * deceleration)
+    total_distance = reaction_distance + braking_distance
+
+    return reaction_distance, braking_distance, total_distance
+
+
+st.set_page_config(
+    page_title="Porsche 911 Braking Simulation",
+    page_icon="​￼​",
+    layout="wide"
+)
+
+st.title("​￼​ Porsche 911 Braking Physics Simulation")
+st.write("Prepared by: Talia Fouda | Grade 12 Physics")
+
+st.info(
+    "Educational model only. The friction coefficients and "
+    "reaction time are assumptions, not measured Porsche test data."
+)
+
+st.header("1. Adjust the Simulation")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    speed = st.slider(
+        "Starting speed (km/h)",
+        min_value=20,
+        max_value=300,
+        value=100,
+        step=10
+    )
+
+with col2:
+    friction = st.slider(
+        "Road grip (friction coefficient μ)",
+        min_value=0.10,
+        max_value=1.00,
+        value=0.80,
+        step=0.05
+    )
+
+reaction, braking, total = stopping_distances(
+    speed, friction, REACTION_TIME
+)
+
+st.header("2. Calculated Results")
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Reaction Distance", f"{reaction:.2f} m")
+col2.metric("Braking Distance", f"{braking:.2f} m")
+col3.metric("Total Stopping Distance", f"{total:.2f} m")
+
+st.caption(
+    "Reaction time is assumed to be 1.5 seconds. "
+    "Braking assumes constant deceleration on a level road."
+)
+
+st.header("3. Speed Comparison")
+
+speeds = list(range(20, 301, 10))
+friction_values = [0.80, 0.40, 0.20]
+
+labels = {
+    0.80: "Higher grip (μ = 0.80)",
+    0.40: "Reduced grip (μ = 0.40)",
+    0.20: "Very low grip (μ = 0.20)"
+}
+
+fig, ax = plt.subplots(figsize=(10, 5))
+
+for mu in friction_values:
+    distances = [
+        stopping_distances(v, mu)[2] for v in speeds
+    ]
+    ax.plot(speeds, distances, marker="o", markersize=3,
+            label=labels[mu])
+
+ax.set_title("Estimated Porsche 911 Total Stopping Distance")
+ax.set_xlabel("Starting Speed (km/h)")
+ax.set_ylabel("Total Stopping Distance (m)")
+ax.grid(True, alpha=0.3)
+ax.legend()
+fig.tight_layout()
+
+st.pyplot(fig)
+plt.close(fig)
+
+st.header("4. Results Table")
+
+table_data = []
+
+for v in [50, 80, 100, 120]:
+    r, b, t = stopping_distances(v, friction)
+    table_data.append({
+        "Speed (km/h)": v,
+        "Reaction Distance (m)": round(r, 2),
+        "Braking Distance (m)": round(b, 2),
+        "Total Distance (m)": round(t, 2)
+    })
+
+st.dataframe(table_data, use_container_width=True, hide_index=True)
+
+st.header("5. Physics Formulas")
+
+st.latex(r"v = \frac{\text{speed in km/h}}{3.6}")
+st.latex(r"d_{\text{reaction}} = v t")
+st.latex(r"d_{\text{braking}} = \frac{v^2}{2\mu g}")
+st.latex(r"d_{\text{total}} = d_{\text{reaction}} + d_{\text{braking}}")
+
+st.write(
+    "Here, v is speed in metres per second, t is reaction time, "
+    "μ is the assumed friction coefficient, and g is gravitational "
+    "acceleration (9.81 m/s²)."
+)
+
+st.warning(
+    "This simplified model does not include aerodynamic drag, "
+    "road slope, changes in tire grip, or the detailed behaviour "
+    "of the braking system. Results are estimates, not real-world "
+    "Porsche performance measurements."
+)
